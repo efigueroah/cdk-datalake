@@ -17,7 +17,7 @@ graph TB
     subgraph "Grafana Infrastructure"
         EC2G[EC2 Grafana Instance<br/>Grafana OSS 12.1.0]
         ALB[Application Load Balancer<br/>HTTPS + Health Checks]
-        WAF[AWS WAF (Opcional)<br/>Protección web]
+        WAF[AWS WAF -  Opcional<br/>Protección web]
     end
     
     subgraph "Dashboards"
