@@ -61,6 +61,18 @@ class StreamingStack(Stack):
                         iam.PolicyStatement(
                             effect=iam.Effect.ALLOW,
                             actions=[
+                                "kinesis:DescribeStream",
+                                "kinesis:GetShardIterator",
+                                "kinesis:GetRecords",
+                                "kinesis:ListShards"
+                            ],
+                            resources=[
+                                self.data_stream.stream_arn
+                            ]
+                        ),
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=[
                                 "logs:PutLogEvents"
                             ],
                             resources=[
@@ -99,7 +111,8 @@ class StreamingStack(Stack):
                 role_arn=firehose_role.role_arn,
                 cloud_watch_logging_options=firehose.CfnDeliveryStream.CloudWatchLoggingOptionsProperty(
                     enabled=True,
-                    log_group_name=firehose_log_group.log_group_name
+                    log_group_name=firehose_log_group.log_group_name,
+                    log_stream_name=f"{project_config['prefix']}-delivery-stream"
                 )
             )
         )

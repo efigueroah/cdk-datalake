@@ -69,6 +69,29 @@ class EC2StackEnhanced(Stack):
             )
         )
         
+        # Rol IAM específico para Lambda
+        self.lambda_role = iam.Role(
+            self, "LambdaExecutionRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
+            ]
+        )
+        
+        # Agregar permisos específicos para Lambda
+        self.lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "ssm:SendCommand",
+                    "ssm:GetCommandInvocation",
+                    "ssm:DescribeInstanceInformation",
+                    "ec2:DescribeInstances"
+                ],
+                resources=["*"]
+            )
+        )
+        
         # Security Group
         self.f5_bridge_sg = ec2.SecurityGroup(
             self, "F5BridgeSecurityGroup",
@@ -203,7 +226,7 @@ EOF""",
             runtime=lambda_.Runtime.PYTHON_3_11,
             handler="install_agents.lambda_handler",
             code=lambda_.Code.from_asset("assets/ec2-stack/lambda"),
-            role=self.ec2_role,
+            role=self.lambda_role,
             timeout=Duration.minutes(5),
             environment={
                 "SSM_DOCUMENT_NAME": self.f5_bridge_setup_document.name,

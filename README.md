@@ -115,7 +115,8 @@ axxxxxdatalake/
 │   ├── compute_stack.py        # Lambda, ETL Multiformato y Crawlers
 │   ├── analytics_stack.py      # Athena con 7 queries F5 predefinidas
 │   ├── monitoring_stack.py     # CloudWatch con 8 alarmas F5 específicas
-│   └── ec2_stack_enhanced.py   # Enhanced EC2 F5 Bridge con dual agents
+│   ├── ec2_stack_enhanced.py   # Enhanced EC2 F5 Bridge con dual agents
+│   └── visualization_stack.py  # Grafana on Ec2 para Dastboards y analitica
 ├── code/
 │   └── lambda/
 │       └── log_filter/         # Código Lambda para filtrado F5
@@ -383,6 +384,27 @@ El proyecto incluye `.gitignore` configurado para:
    -**Logs**: `*.log`, archivos temporales
 
 ## Limpieza de Recursos
+
+### ⚠️ IMPORTANTE - Recursos GuardDuty
+
+**ANTES de eliminar el stack de network**, es obligatorio limpiar recursos creados automáticamente por GuardDuty:
+
+```bash
+# 1. Identificar y eliminar VPC Endpoints de GuardDuty
+aws ec2 describe-vpc-endpoints --filters "Name=vpc-id,Values={VPC_ID}" "Name=service-name,Values=com.amazonaws.us-east-2.guardduty-data" --profile agesicUruguay-699019841929 --region us-east-2
+aws ec2 delete-vpc-endpoints --vpc-endpoint-ids {ENDPOINT_ID} --profile agesicUruguay-699019841929 --region us-east-2
+
+# 2. Identificar y eliminar Security Groups de GuardDuty
+aws ec2 describe-security-groups --filters "Name=vpc-id,Values={VPC_ID}" "Name=tag:GuardDutyManaged,Values=true" --profile agesicUruguay-699019841929 --region us-east-2
+aws ec2 delete-security-group --group-id {SECURITY_GROUP_ID} --profile agesicUruguay-699019841929 --region us-east-2
+
+# 3. Proceder con eliminación normal del stack de network
+cdk destroy agesic-dl-poc-network --profile agesicUruguay-699019841929 --force
+```
+
+**Ver guía completa:** [GUARDDUTY_CLEANUP_GUIDE.md](./GUARDDUTY_CLEANUP_GUIDE.md)
+
+### Eliminación Normal de Stacks
 
 ```bash
 # Eliminar todos los stacks

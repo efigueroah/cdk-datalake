@@ -99,7 +99,7 @@ class AnalyticsStack(Stack):
                         
                         # Crear query con nombre
                         query_name = f"{project_config['prefix']}-{query_id}-{unique_suffix}"
-                        self.named_queries[query_id] = athena.CfnNamedQuery(
+                        named_query = athena.CfnNamedQuery(
                             self, f"NamedQuery{query_id.title().replace('_', '')}",
                             name=query_name,
                             description=f"Query F5 desde assets: {query_file}",
@@ -107,13 +107,16 @@ class AnalyticsStack(Stack):
                             query_string=query_content,
                             work_group=self.athena_workgroup.name
                         )
+                        # Agregar dependencia explícita
+                        named_query.add_dependency(self.athena_workgroup)
+                        self.named_queries[query_id] = named_query
                         
                     except Exception as e:
                         print(f"Error cargando query {query_file}: {e}")
         
         # Queries de respaldo si no se encuentran assets
         if not self.named_queries:
-            fallback_query = f"""
+            fallback_query_string = f"""
             SELECT 
                 entorno_nodo as f5_bigip,
                 ambiente_pool as f5_pool,
@@ -126,14 +129,17 @@ class AnalyticsStack(Stack):
             LIMIT 50
             """
             
-            self.named_queries["fallback"] = athena.CfnNamedQuery(
+            fallback_query = athena.CfnNamedQuery(
                 self, "FallbackQuery",
                 name=f"{project_config['prefix']}-fallback-query-{unique_suffix}",
                 description="Query F5 básica de respaldo",
                 database=database_name,
-                query_string=fallback_query,
+                query_string=fallback_query_string,
                 work_group=self.athena_workgroup.name
             )
+            # Agregar dependencia explícita
+            fallback_query.add_dependency(self.athena_workgroup)
+            self.named_queries["fallback"] = fallback_query
         
         # Salidas
         CfnOutput(

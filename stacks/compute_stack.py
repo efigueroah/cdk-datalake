@@ -276,8 +276,8 @@ class ComputeStack(Stack):
                 recrawl_behavior=processed_crawler_config.get("recrawl_behavior", "CRAWL_NEW_FOLDERS_ONLY")
             ),
             schema_change_policy=glue.CfnCrawler.SchemaChangePolicyProperty(
-                update_behavior=processed_crawler_config.get("update_behavior", "UPDATE_IN_DATABASE"),
-                delete_behavior=processed_crawler_config.get("delete_behavior", "LOG")
+                update_behavior="LOG",  # Requerido para CRAWL_NEW_FOLDERS_ONLY
+                delete_behavior="LOG"   # Requerido para CRAWL_NEW_FOLDERS_ONLY
             ),
             schedule=glue.CfnCrawler.ScheduleProperty(
                 schedule_expression=processed_crawler_config.get("schedule", "cron(0 3 * * ? *)")
