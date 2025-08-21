@@ -1,0 +1,56 @@
+glue_jobs:
+  f5_etl_multiformat:
+    name: "f5-etl-multiformat"
+    description: "ETL multiformato robusto para logs F5 - Soporta JSON y texto plano con detección automática"
+    script_location: "etl_f5_multiformat.py"
+    glue_version: "5.0"
+    worker_type: "G.1X"
+    number_of_workers: 2
+    timeout: 60
+    max_retries: 1
+    max_concurrent_runs: 1
+    default_arguments:
+      "--enable-metrics": "true"
+      "--custom-logStream-prefix": "f5-multiformat-processing"
+      "--job-bookmark-option": "job-bookmark-disable"
+      "--enable-spark-ui": "true"
+      "--enable-continuous-cloudwatch-log": "true"
+      "--conf": "spark.hadoop.fs.s3a.endpoint.region=us-east-2"
+    
+  f5_etl_legacy:
+    name: "f5-etl-legacy"
+    description: "ETL legacy para logs F5 - Backup del job multiformato"
+    script_location: "etl_f5_to_parquet.py"
+    glue_version: "5.0"
+    worker_type: "G.1X"
+    number_of_workers: 2
+    timeout: 60
+    max_retries: 1
+    max_concurrent_runs: 1
+    default_arguments:
+      "--enable-metrics": "true"
+      "--custom-logStream-prefix": "f5-legacy-processing"
+      "--job-bookmark-option": "job-bookmark-enable"
+      "--enable-spark-ui": "true"
+      "--enable-continuous-cloudwatch-log": "true"
+
+crawlers:
+  raw_data:
+    name: "raw-crawler"
+    description: "Crawler para datos raw con soporte para clasificadores F5 personalizados"
+    recrawl_behavior: "CRAWL_EVERYTHING"
+    update_behavior: "UPDATE_IN_DATABASE"
+    delete_behavior: "LOG"
+    schedule: "cron(0 2 * * ? *)"  # Daily at 2 AM
+    
+  processed_data:
+    name: "processed-crawler"
+    description: "Crawler para datos procesados F5 en formato Parquet con particionamiento optimizado"
+    recrawl_behavior: "CRAWL_NEW_FOLDERS_ONLY"
+    update_behavior: "UPDATE_IN_DATABASE"
+    delete_behavior: "LOG"
+    schedule: "cron(0 3 * * ? *)"  # Daily at 3 AM
+
+database:
+  name: "f5_analytics_database"
+  description: "Database for AGESIC Data Lake PoC with F5 Analytics"

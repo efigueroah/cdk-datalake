@@ -1,20 +1,26 @@
 from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
-    CfnOutput
+    aws_iam as iam,
+    aws_lambda as lambda_,
+    custom_resources as cr,
+    Duration,
+    CfnOutput,
+    RemovalPolicy
 )
 from constructs import Construct
+import json
 
 class NetworkStack(Stack):
     
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
-        # Get context values
+        # Obtener valores de contexto
         project_config = self.node.try_get_context("project")
         networking_config = self.node.try_get_context("networking")
         
-        # Create VPC
+        # Crear VPC
         # Ensure we have exactly the number of AZs specified in configuration
         max_azs = networking_config["availability_zones"]
         if max_azs < 2:
@@ -156,6 +162,114 @@ class NetworkStack(Stack):
             service=ec2.InterfaceVpcEndpointAwsService.EC2_MESSAGES,
             subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             security_groups=[self.ssm_endpoint_security_group]
+        )
+        
+        # Custom Resource to clean up GuardDuty VPC Endpoints before stack deletion
+        cleanup_lambda = lambda_.Function(
+            self, "GuardDutyCleanupFunction",
+            runtime=lambda_.Runtime.PYTHON_3_9,
+            handler="index.lambda_handler",
+            code=lambda_.Code.from_inline("""
+import boto3
+import json
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    try:
+        ec2 = boto3.client('ec2')
+        vpc_id = event['ResourceProperties']['VpcId']
+        
+        logger.info(f"Processing {event['RequestType']} for VPC {vpc_id}")
+        
+        if event['RequestType'] == 'Delete':
+            # Find GuardDuty VPC Endpoints in this VPC
+            response = ec2.describe_vpc_endpoints(
+                Filters=[
+                    {'Name': 'vpc-id', 'Values': [vpc_id]},
+                    {'Name': 'vpc-endpoint-type', 'Values': ['Interface']},
+                    {'Name': 'state', 'Values': ['available']}
+                ]
+            )
+            
+            guardduty_endpoints = []
+            for endpoint in response['VpcEndpoints']:
+                # Check if this is a GuardDuty managed endpoint
+                if 'GuardDutyManagedSecurityGroup' in str(endpoint.get('Groups', [])):
+                    guardduty_endpoints.append(endpoint['VpcEndpointId'])
+                    logger.info(f"Found GuardDuty endpoint: {endpoint['VpcEndpointId']}")
+            
+            # Delete GuardDuty endpoints
+            for endpoint_id in guardduty_endpoints:
+                try:
+                    logger.info(f"Attempting to delete GuardDuty endpoint: {endpoint_id}")
+                    ec2.delete_vpc_endpoints(VpcEndpointIds=[endpoint_id])
+                    logger.info(f"Successfully deleted GuardDuty endpoint: {endpoint_id}")
+                except Exception as e:
+                    logger.warning(f"Could not delete GuardDuty endpoint {endpoint_id}: {str(e)}")
+                    # Continue with other endpoints
+            
+            if guardduty_endpoints:
+                logger.info(f"Cleaned up {len(guardduty_endpoints)} GuardDuty VPC endpoints")
+            else:
+                logger.info("No GuardDuty VPC endpoints found to clean up")
+        
+        return {
+            'Status': 'SUCCESS',
+            'PhysicalResourceId': f"guardduty-cleanup-{vpc_id}",
+            'Data': {
+                'Message': f'GuardDuty cleanup completed for VPC {vpc_id}'
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in GuardDuty cleanup: {str(e)}")
+        return {
+            'Status': 'FAILED',
+            'Reason': str(e),
+            'PhysicalResourceId': f"guardduty-cleanup-{event.get('ResourceProperties', {}).get('VpcId', 'unknown')}"
+        }
+            """),
+            timeout=Duration.minutes(5),
+            initial_policy=[
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "ec2:DescribeVpcEndpoints",
+                        "ec2:DeleteVpcEndpoints",
+                        "ec2:DescribeNetworkInterfaces"
+                    ],
+                    resources=["*"]
+                )
+            ]
+        )
+        
+        # Custom Resource that triggers the cleanup
+        guardduty_cleanup = cr.AwsCustomResource(
+            self, "GuardDutyCleanup",
+            on_delete=cr.AwsSdkCall(
+                service="Lambda",
+                action="invoke",
+                parameters={
+                    "FunctionName": cleanup_lambda.function_name,
+                    "Payload": json.dumps({
+                        "RequestType": "Delete",
+                        "ResourceProperties": {
+                            "VpcId": self.vpc.vpc_id
+                        }
+                    })
+                },
+                physical_resource_id=cr.PhysicalResourceId.of(f"guardduty-cleanup-{self.vpc.vpc_id}")
+            ),
+            policy=cr.AwsCustomResourcePolicy.from_statements([
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["lambda:InvokeFunction"],
+                    resources=[cleanup_lambda.function_arn]
+                )
+            ])
         )
         
         # Outputs

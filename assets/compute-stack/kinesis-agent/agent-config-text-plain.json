@@ -1,0 +1,12 @@
+{
+  "cloudwatch.emitMetrics": true,
+  "kinesis.endpoint": "https://kinesis.us-east-2.amazonaws.com",
+  "flows": [
+    {
+      "filePattern": "/opt/agesic-datalake/f5_logs_current.log",
+      "kinesisStream": "STREAM_NAME_PLACEHOLDER",
+      "partitionKeyOption": "RANDOM",
+      "initialPosition": "START_OF_FILE"
+    }
+  ]
+}

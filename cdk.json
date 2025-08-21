@@ -45,6 +45,24 @@
     "@aws-cdk/aws-codedeploy:removeAlarmsFromDeploymentGroup": true,
     "@aws-cdk/aws-apigateway:authorizerChangeDeploymentLogicalId": true,
     "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": true,
+    
+    "_comment": "=== F5 IMPROVEMENTS: Essential Security Feature Flags (CDK v2 Compatible) ===",
+    "@aws-cdk/aws-s3:publicAccessBlockedByDefault": true,
+    "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
+    "@aws-cdk/aws-ec2:ebsDefaultGp3Volume": true,
+    "@aws-cdk/core:newStyleStackSynthesis": true,
+    
+    "_comment2": "=== ADDITIONAL RECOMMENDED FLAGS FOR DATA LAKE ===",
+    "@aws-cdk/aws-lambda:useCdkManagedLogGroup": true,
+    "@aws-cdk/aws-ec2:bastionHostUseAmazonLinux2023ByDefault": true,
+    "@aws-cdk/aws-s3:setUniqueReplicationRoleName": true,
+    "@aws-cdk/aws-iam:oidcRejectUnauthorizedConnections": true,
+    "@aws-cdk/aws-efs:defaultEncryptionAtRest": true,
+    "@aws-cdk/aws-efs:denyAnonymousAccess": true,
+    "@aws-cdk/aws-kms:defaultKeyPolicies": true,
+    "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": true,
+    "@aws-cdk/core:explicitStackTags": true,
+    
     "project": {
       "name": "agesic-datalake-poc",
       "prefix": "agesic-dl-poc",
@@ -105,6 +123,24 @@
         "stop_time": "17:00",
         "timezone": "America/Montevideo",
         "days": ["MON", "TUE", "WED", "THU", "FRI"]
+      }
+    },
+    "f5_logs": {
+      "source_bucket": "rawdata-analytics-poc-voh9ai",
+      "source_file": "extracto_logs_acceso_f5_portalgubuy.log",
+      "local_directory": "/var/log/logs_f5",
+      "processing_mode": "manual",
+      "agents": {
+        "kinesis_agent": {
+          "enabled": true,
+          "batch_size": 500,
+          "batch_timeout": 5000
+        },
+        "fluentd": {
+          "enabled": true,
+          "buffer_chunk_limit": "8m",
+          "buffer_queue_limit": 32
+        }
       }
     }
   }

@@ -2,95 +2,95 @@
 
 Este proyecto implementa una Proof of Concept (PoC) de un Data Lake para AGESIC utilizando AWS CDK con Python, **optimizado para procesamiento robusto de logs F5**.
 
-##  ARQUITECTURA ETL MULTIFORMATO IMPLEMENTADA
+## ⚠️ ARQUITECTURA ETL MULTIFORMATO IMPLEMENTADA
 
 **IMPORTANTE**: Este proyecto ha evolucionado a una **arquitectura ETL multiformato robusta** que soporta:
 
-CARACTERÍSTICA:  Detección automática de formato**: JSON vs Texto Plano
-CARACTERÍSTICA:  Procesamiento de datos JSON**: Pre-parseados por Kinesis Agent con regex
-CARACTERÍSTICA:  Procesamiento de texto plano**: Con regex F5 validada al 100%
-CARACTERÍSTICA:  33 campos enriquecidos**: 22 campos F5 + 11 campos derivados para analytics
-CARACTERÍSTICA:  Fallback robusto**: Entre formatos según detección automática
-CARACTERÍSTICA:  Métricas personalizadas**: CloudWatch con 8 alarmas específicas F5
+- **✅ Detección automática de formato**: JSON vs Texto Plano
+- **✅ Procesamiento de datos JSON**: Pre-parseados por Kinesis Agent con regex
+- **✅ Procesamiento de texto plano**: Con regex F5 validada al 100%
+- **✅ 33 campos enriquecidos**: 22 campos F5 + 11 campos derivados para analytics
+- **✅ Fallback robusto**: Entre formatos según detección automática
+- **✅ Métricas personalizadas**: CloudWatch con 8 alarmas específicas F5
 
-##  **RESULTADOS VALIDADOS**
+## 🎯 **RESULTADOS VALIDADOS**
 
 ### **ETL Multiformato - Éxito Confirmado:**
-CARACTERÍSTICA:  299 registros procesados**: 100% de los datos F5 originales
-CARACTERÍSTICA:  Formato Parquet optimizado**: 31,717 bytes con compresión Snappy
-CARACTERÍSTICA:  Particionamiento inteligente**: Por año/mes/día/hora
-CARACTERÍSTICA:  Esquema completo**: 33 campos con tipos de datos correctos (int, boolean, string)
-CARACTERÍSTICA:  Tabla f5_logs creada**: Catalogada exitosamente por crawler
+- **📊 299 registros procesados**: 100% de los datos F5 originales
+- **🗂️ Formato Parquet optimizado**: 31,717 bytes con compresión Snappy
+- **📅 Particionamiento inteligente**: Por año/mes/día/hora
+- **🔧 Esquema completo**: 33 campos con tipos de datos correctos (int, boolean, string)
+- **📈 Tabla f5_logs creada**: Catalogada exitosamente por crawler
 
 ### **Campos Procesados (33 total):**
 
 #### **Campos F5 Originales (22):**
-ITEM: `timestamp_syslog`, `hostname`, `ip_cliente_externo`, `ip_red_interna`
-ITEM: `usuario_autenticado`, `identidad`, `timestamp_apache`
-ITEM: `metodo`, `recurso`, `protocolo`, `codigo_respuesta`, `tamano_respuesta`
-ITEM: `referer`, `user_agent`, `tiempo_respuesta_ms`, `edad_cache`
-ITEM: `content_type`, `campo_reservado_1`, `campo_reservado_2`
-ITEM: `ambiente_origen`, `ambiente_pool`, `entorno_nodo`
+- `timestamp_syslog`, `hostname`, `ip_cliente_externo`, `ip_red_interna`
+- `usuario_autenticado`, `identidad`, `timestamp_apache`
+- `metodo`, `recurso`, `protocolo`, `codigo_respuesta`, `tamano_respuesta`
+- `referer`, `user_agent`, `tiempo_respuesta_ms`, `edad_cache`
+- `content_type`, `campo_reservado_1`, `campo_reservado_2`
+- `ambiente_origen`, `ambiente_pool`, `entorno_nodo`
 
 #### **Campos Derivados para Analytics (11):**
-ITEM: `parsed_timestamp_syslog`, `parsed_timestamp_apache`
-ITEM: `is_error`, `status_category`, `is_slow`, `response_time_category`
-ITEM: `is_mobile`, `content_category`, `cache_hit`
-ITEM: `processing_timestamp`, `etl_version`
+- `parsed_timestamp_syslog`, `parsed_timestamp_apache`
+- `is_error`, `status_category`, `is_slow`, `response_time_category`
+- `is_mobile`, `content_category`, `cache_hit`
+- `processing_timestamp`, `etl_version`
 
 ## Arquitectura
 
 La solución implementa una arquitectura de Data Lake robusta con los siguientes componentes:
 
-CARACTERÍSTICA: Ingesta**: S3 → EC2 Bridge → Kinesis Data Streams + Kinesis Data Firehose
-CARACTERÍSTICA: Almacenamiento**: S3 con arquitectura Medallion (Raw/Processed zones)
-CARACTERÍSTICA: Procesamiento**: **ETL Multiformato** + Lambda para filtrado F5 con métricas personalizadas
-CARACTERÍSTICA: Catalogación**: AWS Glue Data Catalog + Crawlers + Tabla F5 optimizada (33 campos)
-CARACTERÍSTICA: Analytics**: Amazon Athena con **7 queries F5 predefinidas**
-CARACTERÍSTICA: Monitoreo**: CloudWatch + SNS para alertas + **Dashboard F5** + **8 Alarmas específicas**
-CARACTERÍSTICA: Bridge**: EC2 Spot instances con dual agents (Kinesis Agent + Fluentd)
-CARACTERÍSTICA: Visualización**: Grafana OSS 12.1.0 con ALB y opcional WAF
-CARACTERÍSTICA: Conectividad**: SSM Session Manager para acceso seguro
+- **Ingesta**: S3 → EC2 Bridge → Kinesis Data Streams + Kinesis Data Firehose
+- **Almacenamiento**: S3 con arquitectura Medallion (Raw/Processed zones)
+- **Procesamiento**: **ETL Multiformato** + Lambda para filtrado F5 con métricas personalizadas
+- **Catalogación**: AWS Glue Data Catalog + Crawlers + Tabla F5 optimizada (33 campos)
+- **Analytics**: Amazon Athena con **7 queries F5 predefinidas**
+- **Monitoreo**: CloudWatch + SNS para alertas + **Dashboard F5** + **8 Alarmas específicas**
+- **Bridge**: EC2 Spot instances con dual agents (Kinesis Agent + Fluentd)
+- **Visualización**: Grafana OSS 12.1.0 con ALB y opcional WAF
+- **Conectividad**: SSM Session Manager para acceso seguro
 
-##  **MEJORAS ETL MULTIFORMATO IMPLEMENTADAS**
+## 🚀 **MEJORAS ETL MULTIFORMATO IMPLEMENTADAS**
 
 ### **1. ETL Robusto con Detección Automática**
-ITEM:  **Detección de formato automática**: JSON vs Texto Plano
-ITEM:  **Regex F5 validada**: 100% de coincidencia en pruebas locales
-ITEM:  **Fallback inteligente**: Entre formatos según contenido
-ITEM:  **Métricas detalladas**: Estadísticas de procesamiento por formato
+- ✅ **Detección de formato automática**: JSON vs Texto Plano
+- ✅ **Regex F5 validada**: 100% de coincidencia en pruebas locales
+- ✅ **Fallback inteligente**: Entre formatos según contenido
+- ✅ **Métricas detalladas**: Estadísticas de procesamiento por formato
 
 ### **2. Esquema F5 Optimizado (33 campos)**
-ITEM:  **22 campos F5 originales**: Todos los datos de infraestructura F5
-ITEM:  **11 campos derivados**: Para analytics avanzado
-ITEM:  **Tipos de datos correctos**: int, boolean, string según esquema
-ITEM:  **Particionamiento inteligente**: Por año/mes/día/hora
+- ✅ **22 campos F5 originales**: Todos los datos de infraestructura F5
+- ✅ **11 campos derivados**: Para analytics avanzado
+- ✅ **Tipos de datos correctos**: int, boolean, string según esquema
+- ✅ **Particionamiento inteligente**: Por año/mes/día/hora
 
 ### **3. Queries Athena Predefinidas (7 queries)**
-ITEM:  **F5 Error Analysis Enhanced**: Análisis detallado de errores por BigIP/Pool
-ITEM:  **F5 Performance Analysis Comprehensive**: Métricas de performance con percentiles
-ITEM:  **F5 Traffic Distribution by Infrastructure**: Distribución por componentes F5
-ITEM:  **F5 Client Behavior Analysis**: Análisis de comportamiento con detección móvil
-ITEM:  **F5 Content Performance Optimization**: Optimización de caché por tipo de contenido
-ITEM:  **F5 Hourly Infrastructure Summary**: Resumen horario operacional
-ITEM:  **F5 Pool Health Monitoring**: Monitoreo de salud con scoring automático
+- ✅ **F5 Error Analysis Enhanced**: Análisis detallado de errores por BigIP/Pool
+- ✅ **F5 Performance Analysis Comprehensive**: Métricas de performance con percentiles
+- ✅ **F5 Traffic Distribution by Infrastructure**: Distribución por componentes F5
+- ✅ **F5 Client Behavior Analysis**: Análisis de comportamiento con detección móvil
+- ✅ **F5 Content Performance Optimization**: Optimización de caché por tipo de contenido
+- ✅ **F5 Hourly Infrastructure Summary**: Resumen horario operacional
+- ✅ **F5 Pool Health Monitoring**: Monitoreo de salud con scoring automático
 
 ### **4. Monitoreo F5 Específico (8 alarmas)**
-ITEM:  **Kinesis No Incoming Records**: Sin datos F5 por 10 minutos
-ITEM:  **Kinesis High Iterator Age**: Lag de procesamiento F5
-ITEM:  **Lambda F5 Error Rate**: Errores en procesamiento
-ITEM:  **Lambda F5 Duration**: Duración alta de procesamiento
-ITEM:  **Glue ETL Multiformat Failures**: Fallos en ETL multiformato
-ITEM:  **F5 Average Response Time**: Tiempo de respuesta alto
-ITEM:  **F5 Error Rate**: Tasa de errores F5 alta
-ITEM:  **F5 Pool Health Score**: Score de salud de pools bajo
+- ✅ **Kinesis No Incoming Records**: Sin datos F5 por 10 minutos
+- ✅ **Kinesis High Iterator Age**: Lag de procesamiento F5
+- ✅ **Lambda F5 Error Rate**: Errores en procesamiento
+- ✅ **Lambda F5 Duration**: Duración alta de procesamiento
+- ✅ **Glue ETL Multiformat Failures**: Fallos en ETL multiformato
+- ✅ **F5 Average Response Time**: Tiempo de respuesta alto
+- ✅ **F5 Error Rate**: Tasa de errores F5 alta
+- ✅ **F5 Pool Health Score**: Score de salud de pools bajo
 
 ### **5. Dashboard F5 Analytics**
-ITEM:  **Request Volume & Error Rate**: Volumen e ingesta de logs F5
-ITEM:  **Response Time Metrics**: Métricas de performance (Avg, P95)
-ITEM:  **Pool Health Score**: Indicador de salud en tiempo real
-ITEM:  **Processing Pipeline Health**: Estado del pipeline ETL
-ITEM:  **Traffic Distribution**: Análisis de tráfico móvil y caché
+- ✅ **Request Volume & Error Rate**: Volumen e ingesta de logs F5
+- ✅ **Response Time Metrics**: Métricas de performance (Avg, P95)
+- ✅ **Pool Health Score**: Indicador de salud en tiempo real
+- ✅ **Processing Pipeline Health**: Estado del pipeline ETL
+- ✅ **Traffic Distribution**: Análisis de tráfico móvil y caché
 
 ## Estructura del Proyecto
 
@@ -126,14 +126,14 @@ agesicdatalake/
 
 El archivo `cdk.json` contiene toda la configuración parametrizada:
 
-CARACTERÍSTICA: project**: Configuración del proyecto (nombre, prefijos, ambiente)
-CARACTERÍSTICA: tags**: Tags aplicadas a todos los recursos
-CARACTERÍSTICA: networking**: Configuración de VPC
-CARACTERÍSTICA: kinesis**: Configuración de streams y buffer
-CARACTERÍSTICA: s3**: Políticas de lifecycle
-CARACTERÍSTICA: glue**: Configuración de crawlers y ETL jobs
-CARACTERÍSTICA: cloudwatch**: Retención de logs
-CARACTERÍSTICA: notifications**: Email para alertas
+- **project**: Configuración del proyecto (nombre, prefijos, ambiente)
+- **tags**: Tags aplicadas a todos los recursos
+- **networking**: Configuración de VPC
+- **kinesis**: Configuración de streams y buffer
+- **s3**: Políticas de lifecycle
+- **glue**: Configuración de crawlers y ETL jobs
+- **cloudwatch**: Retención de logs
+- **notifications**: Email para alertas
 
 ### Variables de Ambiente Requeridas
 
@@ -290,31 +290,31 @@ El stack de analytics incluye queries optimizadas para análisis F5:
 
 ### CloudWatch Alarms Configuradas (8 alarmas)
 
-CARACTERÍSTICA: Kinesis**: Sin registros F5, iterator age alto
-CARACTERÍSTICA: Lambda**: Errores y duración alta en procesamiento F5
-CARACTERÍSTICA: Glue**: Fallos en ETL multiformato
-CARACTERÍSTICA: F5 Metrics**: Response time alto, error rate alto, pool health bajo
+- **Kinesis**: Sin registros F5, iterator age alto
+- **Lambda**: Errores y duración alta en procesamiento F5
+- **Glue**: Fallos en ETL multiformato
+- **F5 Metrics**: Response time alto, error rate alto, pool health bajo
 
 ### CloudWatch Dashboard F5
 
-CARACTERÍSTICA: Request Volume & Error Rate**: Métricas de ingesta y errores
-CARACTERÍSTICA: Response Time Metrics**: Performance (Avg, P95)
-CARACTERÍSTICA: Pool Health Score**: Indicador de salud en tiempo real
-CARACTERÍSTICA: Processing Pipeline**: Estado del ETL multiformato
-CARACTERÍSTICA: Traffic Distribution**: Análisis móvil y caché
+- **Request Volume & Error Rate**: Métricas de ingesta y errores
+- **Response Time Metrics**: Performance (Avg, P95)
+- **Pool Health Score**: Indicador de salud en tiempo real
+- **Processing Pipeline**: Estado del ETL multiformato
+- **Traffic Distribution**: Análisis móvil y caché
 
 ## Costos Estimados
 
 **Costo mensual estimado**: USD $45.80 (con ETL multiformato y analytics F5)
 
 ### Desglose:
-CARACTERÍSTICA: Kinesis Data Streams**: $11.00
-CARACTERÍSTICA: Kinesis Data Firehose**: $8.50
-CARACTERÍSTICA: AWS Glue ETL**: $12.30 (multiformato + legacy)
-CARACTERÍSTICA: Lambda**: $2.00
-CARACTERÍSTICA: S3 Storage**: $5.00
-CARACTERÍSTICA: Athena**: $3.00
-CARACTERÍSTICA: CloudWatch**: $4.00
+- **Kinesis Data Streams**: $11.00
+- **Kinesis Data Firehose**: $8.50
+- **AWS Glue ETL**: $12.30 (multiformato + legacy)
+- **Lambda**: $2.00
+- **S3 Storage**: $5.00
+- **Athena**: $3.00
+- **CloudWatch**: $4.00
 
 ## Arquitectura ETL Multiformato
 
@@ -332,31 +332,31 @@ CARACTERÍSTICA: CloudWatch**: $4.00
 
 ### **Ventajas del ETL Multiformato:**
 
-ITEM:  **Robustez máxima**: Maneja cualquier formato de entrada
-ITEM:  **Detección automática**: Sin configuración manual
-ITEM:  **Fallback inteligente**: Recuperación automática de errores
-ITEM:  **Métricas detalladas**: Visibilidad completa del procesamiento
-ITEM:  **Escalabilidad**: Spark 3.5.4 con optimizaciones automáticas
+- ✅ **Robustez máxima**: Maneja cualquier formato de entrada
+- ✅ **Detección automática**: Sin configuración manual
+- ✅ **Fallback inteligente**: Recuperación automática de errores
+- ✅ **Métricas detalladas**: Visibilidad completa del procesamiento
+- ✅ **Escalabilidad**: Spark 3.5.4 con optimizaciones automáticas
 
 ## Control de Versiones
 
 ### Archivos Incluidos en Git
 
 El proyecto incluye `.gitignore` configurado para:
-ITEM:  **Código fuente**: Todos los archivos `.py`, `.json`, `.md`
-ITEM:  **Configuración**: `cdk.json`, `requirements.txt`
-ITEM:  **Assets**: Scripts ETL multiformato, queries F5, configuraciones
-ITEM:  **Documentación**: README actualizado, especificaciones
+- ✅ **Código fuente**: Todos los archivos `.py`, `.json`, `.md`
+- ✅ **Configuración**: `cdk.json`, `requirements.txt`
+- ✅ **Assets**: Scripts ETL multiformato, queries F5, configuraciones
+- ✅ **Documentación**: README actualizado, especificaciones
 
 ### Archivos Excluidos de Git
 
-ITEM:  **CDK outputs**: `cdk.out/`, `cdk.context.json`
-ITEM:  **Python cache**: `__pycache__/`, `*.pyc`
-ITEM:  **Virtual environments**: `.venv/`, `venv/`
-ITEM:  **Credenciales AWS**: `.aws/`, `credentials`, `*.pem`
-ITEM:  **Variables de entorno**: `.env`
-ITEM:  **IDE files**: `.vscode/`, `.idea/`
-ITEM:  **Logs**: `*.log`, archivos temporales
+- ❌ **CDK outputs**: `cdk.out/`, `cdk.context.json`
+- ❌ **Python cache**: `__pycache__/`, `*.pyc`
+- ❌ **Virtual environments**: `.venv/`, `venv/`
+- ❌ **Credenciales AWS**: `.aws/`, `credentials`, `*.pem`
+- ❌ **Variables de entorno**: `.env`
+- ❌ **IDE files**: `.vscode/`, `.idea/`
+- ❌ **Logs**: `*.log`, archivos temporales
 
 ## Limpieza de Recursos
 

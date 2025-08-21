@@ -1,0 +1,134 @@
+{
+  "project": {
+    "name": "AGESIC Data Lake PoC",
+    "prefix": "agesic-dl-poc",
+    "environment": "poc",
+    "version": "2.0-enhanced"
+  },
+  "account": "699019841929",
+  "region": "us-east-2",
+  "tags": {
+    "Project": "AGESIC-DataLake-PoC",
+    "Environment": "PoC",
+    "Owner": "AGESIC",
+    "CostCenter": "DataAnalytics",
+    "Version": "2.0-Enhanced",
+    "ManagedBy": "CDK"
+  },
+  "networking": {
+    "vpc_cidr": "10.0.0.0/16",
+    "max_azs": 2,
+    "enable_nat_gateway": true,
+    "enable_vpc_endpoints": true
+  },
+  "ec2": {
+    "enable_dual_agents": true,
+    "enable_scheduling": false,
+    "instance_type": "t3.small",
+    "max_spot_price": 0.01,
+    "schedule": {
+      "start_time": "09:00",
+      "stop_time": "17:00"
+    },
+    "enhanced_features": {
+      "ssm_documents": true,
+      "auto_install_agents": true,
+      "userdata_optimization": true,
+      "comprehensive_monitoring": true
+    }
+  },
+  "f5_logs": {
+    "source_bucket": "rawdata-analytics-poc-voh9ai",
+    "source_file": "extracto_logs_acceso_f5_portalgubuy.txt",
+    "local_log_dir": "/var/log/logs_f5",
+    "processing_interval_minutes": 30,
+    "max_records_per_batch": 5000,
+    "regex_pattern_fields": 25
+  },
+  "kinesis": {
+    "stream_name": "agesic-dl-poc-data-stream",
+    "shard_count": 1,
+    "retention_hours": 24,
+    "buffer_size_mb": 5,
+    "buffer_interval_seconds": 60
+  },
+  "ssm_documents": {
+    "complete_setup": {
+      "name": "agesic-dl-poc-complete-setup",
+      "timeout_seconds": 600,
+      "includes": [
+        "base_environment",
+        "python_processor",
+        "management_scripts",
+        "systemd_services"
+      ]
+    },
+    "install_agents": {
+      "name": "agesic-dl-poc-install-agents",
+      "timeout_seconds": 600,
+      "supported_agents": [
+        "kinesis_agent",
+        "fluentd",
+        "both"
+      ]
+    }
+  },
+  "lambda": {
+    "auto_installer": {
+      "runtime": "python3.9",
+      "timeout_minutes": 5,
+      "memory_mb": 128,
+      "trigger_on_launch": true
+    }
+  },
+  "monitoring": {
+    "detailed_monitoring": true,
+    "custom_metrics": true,
+    "log_retention_days": 14,
+    "enable_insights": true
+  },
+  "s3": {
+    "lifecycle_policies": {
+      "raw_data": {
+        "transition_to_ia_days": 30,
+        "transition_to_glacier_days": 90,
+        "expiration_days": 365
+      },
+      "processed_data": {
+        "transition_to_ia_days": 30,
+        "transition_to_glacier_days": 180,
+        "expiration_days": 1095
+      }
+    }
+  },
+  "glue": {
+    "crawler_schedule": "cron(0 2 * * ? *)",
+    "etl_schedule": "cron(0 3 * * ? *)",
+    "max_concurrent_runs": 1,
+    "timeout_minutes": 60
+  },
+  "cloudwatch": {
+    "log_retention_days": 14,
+    "metric_namespace": "AGESIC/DataLake",
+    "dashboard_enabled": true
+  },
+  "notifications": {
+    "email": "admin@agesic.gub.uy",
+    "sns_topic": "agesic-dl-poc-alerts"
+  },
+  "features": {
+    "enhanced_ec2_stack": true,
+    "ssm_document_deployment": true,
+    "dual_agents_support": true,
+    "userdata_size_optimization": true,
+    "automated_agent_installation": true,
+    "comprehensive_logging": true,
+    "advanced_monitoring": true
+  },
+  "deployment": {
+    "require_approval": "never",
+    "rollback_on_failure": true,
+    "enable_termination_protection": false,
+    "bootstrap_required": true
+  }
+}

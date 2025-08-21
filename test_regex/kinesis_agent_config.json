@@ -1,0 +1,43 @@
+{
+  "cloudwatch.emitMetrics": true,
+  "cloudwatch.endpoint": "https://monitoring.us-east-1.amazonaws.com",
+  "firehose.endpoint": "https://firehose.us-east-1.amazonaws.com",
+  "flows": [
+    {
+      "filePattern": "/opt/agesic-datalake/logs/extracto_logs_acceso_f5_portalgubuy.log",
+      "kinesisStream": "agesic-dl-poc-data-stream",
+      "partitionKeyOption": "RANDOM",
+      "dataProcessingOptions": [
+        {
+          "optionName": "LOGTOJSON",
+          "logFormat": "COMMONAPACHELOG",
+          "matchPattern": "(\\w{3} \\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}) ([^\\s]+) ([^\\s]+) \\[([^\\]]+)\\] (-|\"[^\"]*\") (\"[^\"]*\") \\[([^\\]]+)\\] \"(\\w+) ([^\"]+) (HTTP/\\d\\.\\d)\" (\\d+) (\\d+) \"([^\"]*)\" \"([^\"]*)\" Time (\\d+) Age \"([^\"]*)\" \"([^\"]*)\" \"([^\"]*)\" (-|\"[^\"]*\") \"([^\"]*)\" \"([^\"]*)\" (\\w+)",
+          "customFieldNames": [
+            "timestamp_syslog",
+            "hostname",
+            "ip_cliente_externo",
+            "ip_red_interna",
+            "usuario_autenticado",
+            "identidad",
+            "timestamp_apache",
+            "metodo",
+            "recurso",
+            "protocolo",
+            "codigo_respuesta",
+            "tamano_respuesta",
+            "referer",
+            "user_agent",
+            "tiempo_respuesta_ms",
+            "edad_cache",
+            "content_type",
+            "campo_reservado_1",
+            "campo_reservado_2",
+            "ambiente_origen",
+            "ambiente_pool",
+            "entorno_nodo"
+          ]
+        }
+      ]
+    }
+  ]
+}

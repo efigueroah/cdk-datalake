@@ -1,0 +1,29 @@
+workgroup:
+  name: "f5-analytics-wg"
+  description: "Workgroup optimizado para análisis de logs F5 con 33 campos enriquecidos"
+  state: "ENABLED"
+  
+configuration:
+  result_configuration:
+    output_location: "s3://ATHENA_RESULTS_BUCKET_PLACEHOLDER/f5-query-results/"
+    encryption_configuration:
+      encryption_option: "SSE_S3"
+  
+  enforce_work_group_configuration: true
+  bytes_scanned_cutoff_per_query: 2000000000  # 2GB limit para queries F5 complejas
+  
+  engine_version:
+    selected_engine_version: "Athena engine version 3"  # Latest version
+
+queries:
+  - name: "f5-error-analysis-enhanced"
+    description: "Análisis detallado de errores F5 con métricas de infraestructura"
+    file: "f5-error-analysis.sql"
+    
+  - name: "f5-performance-analysis-comprehensive"
+    description: "Análisis comprehensivo de performance F5 con métricas de dispositivos"
+    file: "f5-performance-analysis.sql"
+    
+  - name: "f5-pool-health-monitoring"
+    description: "Monitoreo de salud de pools F5 con scoring automático"
+    file: "f5-pool-health-monitoring.sql"

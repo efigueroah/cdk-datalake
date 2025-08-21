@@ -12,7 +12,7 @@ class StorageStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
-        # Get context values
+        # Obtener valores de contexto
         project_config = self.node.try_get_context("project")
         s3_config = self.node.try_get_context("s3")
         

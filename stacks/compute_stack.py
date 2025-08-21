@@ -8,12 +8,14 @@ from aws_cdk import (
     aws_s3_deployment as s3deploy,
     aws_kinesis as kinesis,
     aws_ec2 as ec2,
-    aws_events as events,
-    aws_events_targets as targets,
+    aws_logs as logs,
     Duration,
+    RemovalPolicy,
     CfnOutput
 )
 from constructs import Construct
+import yaml
+import os
 
 class ComputeStack(Stack):
     
@@ -23,12 +25,35 @@ class ComputeStack(Stack):
                  processed_bucket: s3.Bucket, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
-        # Get context values
+        # Obtener valores de contexto
         project_config = self.node.try_get_context("project")
-        glue_config = self.node.try_get_context("glue")
-        cloudwatch_config = self.node.try_get_context("cloudwatch")
         
-        # Lambda execution role
+        # Cargar configuración de Glue desde assets
+        config_path = os.path.join(
+            os.path.dirname(__file__), 
+            "..", 
+            "assets", 
+            "compute-stack", 
+            "configurations", 
+            "glue-jobs-config.yaml"
+        )
+        
+        try:
+            with open(config_path, 'r') as f:
+                glue_config = yaml.safe_load(f)
+        except FileNotFoundError:
+            # Configuración de respaldo
+            glue_config = {
+                "glue_jobs": {
+                    "f5_etl_multiformat": {
+                        "glue_version": "5.0",
+                        "worker_type": "G.1X",
+                        "number_of_workers": 2
+                    }
+                }
+            }
+        
+        # Rol de ejecución de Lambda
         lambda_role = iam.Role(
             self, "LambdaExecutionRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -38,7 +63,7 @@ class ComputeStack(Stack):
             ]
         )
         
-        # Grant Lambda permissions to write to CloudWatch Logs
+        # Otorgar permisos a Lambda
         lambda_role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -46,34 +71,32 @@ class ComputeStack(Stack):
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
                     "logs:PutLogEvents",
-                    "logs:DescribeLogGroups",
-                    "logs:DescribeLogStreams"
+                    "cloudwatch:PutMetricData"
                 ],
                 resources=["*"]
             )
         )
         
-        # Lambda function for log filtering
+        # Función Lambda para filtrado de logs F5
         self.log_filter_lambda = lambda_.Function(
-            self, "LogFilterFunction",
-            function_name=f"{project_config['prefix']}-log-filter",
-            runtime=lambda_.Runtime.PYTHON_3_9,
+            self, "F5LogFilterFunction",
+            runtime=lambda_.Runtime.PYTHON_3_11,
             handler="lambda_function.lambda_handler",
             code=lambda_.Code.from_asset("code/lambda/log_filter"),
             role=lambda_role,
+            vpc=vpc,
+            security_groups=[lambda_sg],
             timeout=Duration.minutes(5),
             memory_size=512,
-            reserved_concurrent_executions=10,
             environment={
                 "LOG_LEVEL": "INFO",
-                "PROJECT_PREFIX": project_config['prefix']
+                "ENABLE_F5_METRICS": "true",
+                "CUSTOM_NAMESPACE": f"{project_config['prefix']}/F5Analytics"
             },
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
-            security_groups=[lambda_sg]
+            description="Filtrado mejorado de logs F5 con métricas personalizadas de CloudWatch"
         )
         
-        # Add Kinesis as event source for Lambda
+        # Agregar fuente de eventos Kinesis
         self.log_filter_lambda.add_event_source(
             lambda_events.KinesisEventSource(
                 stream=kinesis_stream,
@@ -84,7 +107,7 @@ class ComputeStack(Stack):
             )
         )
         
-        # Glue service role
+        # Rol de servicio de Glue
         glue_role = iam.Role(
             self, "GlueServiceRole",
             assumed_by=iam.ServicePrincipal("glue.amazonaws.com"),
@@ -93,56 +116,125 @@ class ComputeStack(Stack):
             ]
         )
         
-        # Grant Glue permissions to access S3 buckets
+        # Otorgar permisos a Glue
         raw_bucket.grant_read(glue_role)
         processed_bucket.grant_read_write(glue_role)
         
-        # Create Glue database
+        glue_role.add_to_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream", 
+                    "logs:PutLogEvents",
+                    "cloudwatch:PutMetricData"
+                ],
+                resources=["*"]
+            )
+        )
+        
+        # Crear base de datos de Glue
         self.glue_database = glue.CfnDatabase(
             self, "GlueDatabase",
             catalog_id=self.account,
             database_input=glue.CfnDatabase.DatabaseInputProperty(
                 name=f"{project_config['prefix'].replace('-', '_')}_database",
-                description="Database for AGESIC Data Lake PoC"
+                description="Base de datos para AGESIC Data Lake PoC con análisis F5"
             )
         )
         
-        # Deploy Glue script to S3 (using raw bucket for simplicity in PoC)
-        script_deployment = s3deploy.BucketDeployment(
-            self, "GlueScriptDeployment",
-            sources=[s3deploy.Source.asset("assets/glue_scripts")],
+        # Desplegar scripts de Glue desde assets organizados
+        glue_scripts_deployment = s3deploy.BucketDeployment(
+            self, "GlueScriptsDeployment",
+            sources=[s3deploy.Source.asset("assets/compute-stack/glue-scripts")],
             destination_bucket=raw_bucket,
-            destination_key_prefix="scripts/"
+            destination_key_prefix="scripts/",
+            retain_on_delete=False
         )
         
-        # Glue ETL Job
-        self.glue_etl_job = glue.CfnJob(
-            self, "GlueETLJob",
-            name=f"{project_config['prefix']}-etl-job",
+        # Desplegar configuraciones de Kinesis Agent
+        kinesis_configs_deployment = s3deploy.BucketDeployment(
+            self, "KinesisConfigsDeployment",
+            sources=[s3deploy.Source.asset("assets/compute-stack/kinesis-agent")],
+            destination_bucket=raw_bucket,
+            destination_key_prefix="kinesis-configs/",
+            retain_on_delete=False
+        )
+        
+        # Job ETL F5 - MULTIFORMATO (Principal)
+        multiformat_config = glue_config.get("glue_jobs", {}).get("f5_etl_multiformat", {})
+        self.f5_etl_job_multiformat = glue.CfnJob(
+            self, "F5ETLJobMultiformat",
+            name=f"{project_config['prefix']}-f5-etl-multiformat",
             role=glue_role.role_arn,
             command=glue.CfnJob.JobCommandProperty(
                 name="glueetl",
-                python_version="3",
-                script_location=f"s3://{raw_bucket.bucket_name}/scripts/etl_json_to_parquet.py"
+                script_location=f"s3://{raw_bucket.bucket_name}/scripts/etl_f5_multiformat.py",
+                python_version="3"
             ),
             default_arguments={
-                "--job-bookmark-option": "job-bookmark-enable",
+                "--solution_name": project_config['solution'],
                 "--enable-metrics": "true",
-                "--enable-continuous-cloudwatch-log": "true",
-                "--raw_bucket": raw_bucket.bucket_name,
+                "--custom-logStream-prefix": "f5-multiformat-processing",
+                "--custom-logGroup-prefix": f"{project_config['prefix']}-etl-multiformat",
+                "--conf": f"spark.hadoop.fs.s3a.endpoint.region={self.region}",
                 "--processed_bucket": processed_bucket.bucket_name,
-                "--solution_name": project_config['solution']
+                "--raw_bucket": raw_bucket.bucket_name,
+                "--job-bookmark-option": "job-bookmark-disable",
+                "--enable-spark-ui": "true",
+                "--spark-event-logs-path": f"s3://{processed_bucket.bucket_name}/spark-logs/",
+                "--enable-continuous-cloudwatch-log": "true"
             },
-            glue_version="4.0",
-            worker_type=glue_config["etl_worker_type"],
-            number_of_workers=glue_config["etl_number_of_workers"],
-            timeout=60,  # 60 minutes timeout
-            max_retries=1
+            description="ETL multiformato robusto para logs F5 - Soporta JSON y texto plano",
+            glue_version=multiformat_config.get("glue_version", "5.0"),
+            worker_type=multiformat_config.get("worker_type", "G.1X"),
+            number_of_workers=multiformat_config.get("number_of_workers", 2),
+            timeout=multiformat_config.get("timeout", 60),
+            max_retries=multiformat_config.get("max_retries", 1),
+            execution_property=glue.CfnJob.ExecutionPropertyProperty(
+                max_concurrent_runs=multiformat_config.get("max_concurrent_runs", 1)
+            )
         )
         
-        # Glue Crawler for Raw Zone
+        # Job ETL F5 - Legacy (Respaldo)
+        legacy_config = glue_config.get("glue_jobs", {}).get("f5_etl_legacy", {})
+        self.f5_etl_job_legacy = glue.CfnJob(
+            self, "F5ETLJobLegacy", 
+            name=f"{project_config['prefix']}-f5-etl-legacy",
+            role=glue_role.role_arn,
+            command=glue.CfnJob.JobCommandProperty(
+                name="glueetl",
+                script_location=f"s3://{raw_bucket.bucket_name}/scripts/etl_f5_to_parquet.py",
+                python_version="3"
+            ),
+            default_arguments={
+                "--solution_name": project_config['solution'],
+                "--enable-metrics": "true",
+                "--custom-logStream-prefix": "f5-legacy-processing",
+                "--custom-logGroup-prefix": f"{project_config['prefix']}-etl-legacy",
+                "--conf": f"spark.hadoop.fs.s3a.endpoint.region={self.region}",
+                "--processed_bucket": processed_bucket.bucket_name,
+                "--raw_bucket": raw_bucket.bucket_name,
+                "--job-bookmark-option": "job-bookmark-enable"
+            },
+            description="ETL legacy para logs F5 - Respaldo del job multiformato",
+            glue_version=legacy_config.get("glue_version", "5.0"),
+            worker_type=legacy_config.get("worker_type", "G.1X"), 
+            number_of_workers=legacy_config.get("number_of_workers", 2),
+            timeout=legacy_config.get("timeout", 60),
+            max_retries=legacy_config.get("max_retries", 1),
+            execution_property=glue.CfnJob.ExecutionPropertyProperty(
+                max_concurrent_runs=legacy_config.get("max_concurrent_runs", 1)
+            )
+        )
+        
+        # Configuración de crawlers desde assets
+        crawlers_config = glue_config.get("crawlers", {})
+        
+        # Crawler para datos raw
+        raw_crawler_config = crawlers_config.get("raw_data", {})
         self.raw_crawler = glue.CfnCrawler(
-            self, "RawZoneCrawler",
+            self, "RawDataCrawler",
             name=f"{project_config['prefix']}-raw-crawler",
             role=glue_role.role_arn,
             database_name=self.glue_database.ref,
@@ -153,76 +245,71 @@ class ComputeStack(Stack):
                     )
                 ]
             ),
-            schedule=glue.CfnCrawler.ScheduleProperty(
-                schedule_expression=glue_config["crawler_schedule"]
+            recrawl_policy=glue.CfnCrawler.RecrawlPolicyProperty(
+                recrawl_behavior=raw_crawler_config.get("recrawl_behavior", "CRAWL_EVERYTHING")
             ),
             schema_change_policy=glue.CfnCrawler.SchemaChangePolicyProperty(
-                update_behavior="UPDATE_IN_DATABASE",
-                delete_behavior="LOG"
-            )
+                update_behavior=raw_crawler_config.get("update_behavior", "UPDATE_IN_DATABASE"),
+                delete_behavior=raw_crawler_config.get("delete_behavior", "LOG")
+            ),
+            schedule=glue.CfnCrawler.ScheduleProperty(
+                schedule_expression=raw_crawler_config.get("schedule", "cron(0 2 * * ? *)")
+            ),
+            description=raw_crawler_config.get("description", "Crawler para datos raw con soporte F5")
         )
         
-        # Glue Crawler for Processed Zone
+        # Crawler para datos procesados
+        processed_crawler_config = crawlers_config.get("processed_data", {})
         self.processed_crawler = glue.CfnCrawler(
-            self, "ProcessedZoneCrawler",
+            self, "ProcessedDataCrawler",
             name=f"{project_config['prefix']}-processed-crawler",
             role=glue_role.role_arn,
             database_name=self.glue_database.ref,
             targets=glue.CfnCrawler.TargetsProperty(
                 s3_targets=[
                     glue.CfnCrawler.S3TargetProperty(
-                        path=f"s3://{processed_bucket.bucket_name}/{project_config['solution']}/"
+                        path=f"s3://{processed_bucket.bucket_name}/f5-logs/"
                     )
                 ]
             ),
-            schedule=glue.CfnCrawler.ScheduleProperty(
-                schedule_expression=glue_config["crawler_schedule"]
+            recrawl_policy=glue.CfnCrawler.RecrawlPolicyProperty(
+                recrawl_behavior=processed_crawler_config.get("recrawl_behavior", "CRAWL_NEW_FOLDERS_ONLY")
             ),
             schema_change_policy=glue.CfnCrawler.SchemaChangePolicyProperty(
-                update_behavior="UPDATE_IN_DATABASE",
-                delete_behavior="LOG"
-            )
+                update_behavior=processed_crawler_config.get("update_behavior", "UPDATE_IN_DATABASE"),
+                delete_behavior=processed_crawler_config.get("delete_behavior", "LOG")
+            ),
+            schedule=glue.CfnCrawler.ScheduleProperty(
+                schedule_expression=processed_crawler_config.get("schedule", "cron(0 3 * * ? *)")
+            ),
+            description=processed_crawler_config.get("description", "Crawler para datos procesados F5 en formato Parquet")
         )
         
-        # EventBridge rule to trigger ETL job daily
-        etl_schedule_rule = events.Rule(
-            self, "ETLScheduleRule",
-            rule_name=f"{project_config['prefix']}-etl-schedule",
-            schedule=events.Schedule.cron(
-                minute="30",
-                hour="2",  # Run at 2:30 AM (after crawlers)
-                day="*",
-                month="*",
-                year="*"
-            )
-        )
-        
-        # Add Glue job as target using AwsApi
-        etl_schedule_rule.add_target(
-            targets.AwsApi(
-                service="glue",
-                action="startJobRun",
-                parameters={
-                    "JobName": self.glue_etl_job.name
-                }
-            )
-        )
-        
-        # Outputs
-        CfnOutput(
-            self, "LambdaFunctionName",
-            value=self.log_filter_lambda.function_name,
-            description="Log filter Lambda function name"
-        )
-        
+        # Salidas
         CfnOutput(
             self, "GlueDatabaseName",
             value=self.glue_database.ref,
-            description="Glue database name"
+            description="Nombre de base de datos Glue para análisis F5"
         )
         
         CfnOutput(
-            self, "GlueETLJobName",
-            value=self.glue_etl_job.name,
-            description="Glue ETL job name"
+            self, "F5ETLJobMultiformatName",
+            value=self.f5_etl_job_multiformat.name,
+            description="Nombre del job ETL Multiformato F5 (Principal)"
         )
+        
+        CfnOutput(
+            self, "F5ETLJobLegacyName", 
+            value=self.f5_etl_job_legacy.name,
+            description="Nombre del job ETL Legacy F5 (Respaldo)"
+        )
+        
+        CfnOutput(
+            self, "ComputeAssetsLocation",
+            value=f"s3://{raw_bucket.bucket_name}/scripts/",
+            description="Ubicación de assets compute en S3"
+        )
+        
+        # Almacenar referencias para otros stacks
+        self.glue_role = glue_role
+        self.lambda_role = lambda_role

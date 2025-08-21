@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-08-19T13:42:30.008107",
+  "stack_name": "agesic-dl-poc-ec2-enhanced",
+  "profile": "agesicUruguay-699019841929",
+  "region": "us-east-2",
+  "validations": {
+    "cloudformation_stack": {
+      "status": "PASS",
+      "message": "Stack is in good state: CREATE_COMPLETE",
+      "details": {
+        "stack_status": "CREATE_COMPLETE",
+        "creation_time": "2025-08-19 16:38:17.706000+00:00"
+      },
+      "timestamp": "2025-08-19T13:42:32.023183"
+    },
+    "ssm_documents": {
+      "status": "PASS",
+      "message": "SSM Documents validation: 2/2 found",
+      "details": {
+        "agesic-dl-poc-complete-setup": {
+          "status": "Active",
+          "document_type": "Command",
+          "document_format": "YAML",
+          "created_date": "2025-08-19 13:38:28.976000-03:00",
+          "owner": "699019841929"
+        },
+        "agesic-dl-poc-install-agents": {
+          "status": "Active",
+          "document_type": "Command",
+          "document_format": "YAML",
+          "created_date": "2025-08-19 13:38:28.914000-03:00",
+          "owner": "699019841929"
+        }
+      },
+      "timestamp": "2025-08-19T13:42:33.152869"
+    },
+    "ec2_infrastructure": {
+      "status": "PASS",
+      "message": "EC2 infrastructure healthy: 1 running instances",
+      "details": {
+        "asg_name": "agesic-dl-poc-f5-bridge-asg-enhanced",
+        "desired_capacity": 1,
+        "min_size": 1,
+        "max_size": 1,
+        "total_instances": 1,
+        "running_instances": 1,
+        "instance_ids": [
+          "i-037560dae6b72410e"
+        ]
+      },
+      "timestamp": "2025-08-19T13:42:33.996908"
+    },
+    "lambda_function": {
+      "status": "FAIL",
+      "message": "Error validating Lambda function: 'State'",
+      "details": {
+        "error": "'State'"
+      },
+      "timestamp": "2025-08-19T13:42:34.753389"
+    },
+    "eventbridge_rules": {
+      "status": "PASS",
+      "message": "EventBridge rule is enabled: agesic-dl-poc-ec2-enhance-InstallOnLaunchRule480024-AT3HlOo5nd64",
+      "details": {
+        "rule_name": "agesic-dl-poc-ec2-enhance-InstallOnLaunchRule480024-AT3HlOo5nd64",
+        "state": "ENABLED",
+        "description": "Install F5 Bridge and agents when new instance launches",
+        "event_pattern": "{\"detail-type\":[\"EC2 Instance Launch Successful\"],\"detail\":{\"AutoScalingGroupName\":[\"agesic-dl-poc-f5-bridge-asg-enhanced\"]},\"source\":[\"aws.autoscaling\"]}"
+      },
+      "timestamp": "2025-08-19T13:42:35.605710"
+    },
+    "ssm_connectivity": {
+      "status": "WARNING",
+      "message": "No running instances found for SSM connectivity test",
+      "details": {},
+      "timestamp": "2025-08-19T13:42:36.632380"
+    }
+  },
+  "summary": {
+    "total_checks": 6,
+    "passed": 4,
+    "failed": 1,
+    "warnings": 1
+  }
+}
