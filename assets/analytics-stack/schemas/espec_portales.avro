@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "LogHttpTEPROD",
+  "namespace": "uy.gub.logs.teprod",
+  "doc": "Esquema para interpretar líneas de log HTTP extendido del entorno TEPROD",
+  "fields": [
+    { "name": "timestamp_syslog", "type": "string", "doc": "Timestamp del sistema (syslog)" },
+    { "name": "hostname", "type": "string", "doc": "Nombre del host que genera el log" },
+    { "name": "ip_cliente_externo", "type": "string", "doc": "IP pública del cliente que realiza la solicitud" },
+    { "name": "ip_backend_interno", "type": "string", "doc": "IP privada del backend (entre corchetes)" },
+    { "name": "usuario_autenticado", "type": ["null", "string"], "default": null, "doc": "Usuario autenticado, si aplica" },
+    { "name": "identidad", "type": ["null", "string"], "default": null, "doc": "Campo de identidad o identd" },
+    { "name": "timestamp_rp", "type": "string", "doc": "Timestamp del momento exacto de la solicitud HTTP" },
+    { "name": "metodo", "type": "string", "doc": "Método HTTP (GET, POST...)" },
+    { "name": "request", "type": "string", "doc": "Ruta del recurso solicitado" },
+    { "name": "protocolo", "type": "string", "doc": "Versión del protocolo HTTP" },
+    { "name": "codigo_respuesta", "type": "int", "doc": "Código de estado HTTP (200, 404, etc.)" },
+    { "name": "tamano_respuesta", "type": "int", "doc": "Tamaño en bytes del recurso servido" },
+    { "name": "referer", "type": ["null", "string"], "default": null, "doc": "URL de origen de la solicitud" },
+    { "name": "user_agent", "type": ["null", "string"], "default": null, "doc": "Cadena identificadora del navegador/dispositivo" },
+    { "name": "tiempo_respuesta_ms", "type": "int", "doc": "Tiempo de respuesta en milisegundos" },
+    { "name": "edad_cache", "type": ["null", "string"], "default": null, "doc": "Edad del recurso en caché (TTL), si aplica" },
+    { "name": "content_type", "type": ["null", "string"], "default": null, "doc": "Tipo MIME del recurso (image/png, font/woff2, etc.)" },
+    { "name": "jsession_id", "type": ["null", "string"], "default": null },
+    { "name": "campo_reservado_2", "type": ["null", "string"], "default": null },
+    { "name": "f5_virtualserver", "type": "string", "doc": "Nombre del objeto F5 VirtualServer que atendió la solicitud" },
+    { "name": "f5_pool", "type": "string", "doc": "Nombre del objeto F5 Pool que atendió la solicitud" },
+    { "name": "f5_bigip_name", "type": "string", "doc": "Nombre del nodo BIGIP que atendió la solicitud (ej. TEPROD, PATEST)" }
+  ]
+}
