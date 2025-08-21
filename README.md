@@ -1,6 +1,6 @@
-# AGESIC Data Lake PoC - AWS CDK
+# axxxxx Data Lake PoC - AWS CDK
 
-Este proyecto implementa una Proof of Concept (PoC) de un Data Lake para AGESIC utilizando AWS CDK con Python, **optimizado para procesamiento robusto de logs F5**.
+Este proyecto implementa una Proof of Concept (PoC) de un Data Lake para axxxxx utilizando AWS CDK con Python, **optimizado para procesamiento robusto de logs F5**.
 
 ##  ARQUITECTURA ETL MULTIFORMATO IMPLEMENTADA
 
@@ -95,7 +95,7 @@ ITEM:  **Traffic Distribution**: Análisis de tráfico móvil y caché
 ## Estructura del Proyecto
 
 ```
-agesicdatalake/
+axxxxxdatalake/
 ├── app.py                      # Aplicación principal CDK con ETL multiformato
 ├── cdk.json                    # Configuración CDK y contexto
 ├── requirements.txt            # Dependencias Python
@@ -138,8 +138,8 @@ CARACTERÍSTICA: notifications**: Email para alertas
 ### Variables de Ambiente Requeridas
 
 ```bash
-export AWS_PROFILE=agesicUruguay-699019841929
-export CDK_DEFAULT_ACCOUNT=699019841929
+export AWS_PROFILE=axxxxxx-69xxxxxxxxx9
+export CDK_DEFAULT_ACCOUNT=69xxxxxxxxx9
 export CDK_DEFAULT_REGION=us-east-2
 ```
 
@@ -149,7 +149,7 @@ export CDK_DEFAULT_REGION=us-east-2
 
 ```bash
 # Clonar o descargar el proyecto
-cd agesicdatalake
+cd axxxxxdatalake
 
 # Crear entorno virtual
 python -m venv .venv
@@ -163,50 +163,50 @@ pip install -r requirements.txt
 
 ```bash
 # Configurar perfil AWS
-aws configure --profile agesicUruguay-699019841929
+aws configure --profile axxxxxx-69xxxxxxxxx9
 
 # Verificar configuración
-aws sts get-caller-identity --profile agesicUruguay-699019841929
+aws sts get-caller-identity --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ### 3. Bootstrap CDK (primera vez)
 
 ```bash
-cdk bootstrap --profile agesicUruguay-699019841929
+cdk bootstrap --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ### 4. Sintetizar Templates
 
 ```bash
 # Sintetizar todos los stacks
-cdk synth --profile agesicUruguay-699019841929
+cdk synth --profile axxxxxx-69xxxxxxxxx9
 
 # Sintetizar stack específico
-cdk synth agesic-dl-poc-compute --profile agesicUruguay-699019841929
+cdk synth axxxxx-dl-poc-compute --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ### 5. Desplegar
 
 ```bash
 # Desplegar todos los stacks
-cdk deploy --all --profile agesicUruguay-699019841929
+cdk deploy --all --profile axxxxxx-69xxxxxxxxx9
 
 # Desplegar stack específico
-cdk deploy agesic-dl-poc-compute --profile agesicUruguay-699019841929
+cdk deploy axxxxx-dl-poc-compute --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ## Orden de Despliegue
 
 Los stacks tienen dependencias y se despliegan en el siguiente orden:
 
-1. `agesic-dl-poc-network` - VPC, Security Groups y VPC Endpoints
-2. `agesic-dl-poc-storage` - Buckets S3
-3. `agesic-dl-poc-streaming` - Kinesis streams
-4. `agesic-dl-poc-compute` - **ETL Multiformato**, Lambda y Glue jobs
-5. `agesic-dl-poc-analytics` - Athena workgroup y **7 queries F5**
-6. `agesic-dl-poc-monitoring` - CloudWatch y **8 alarmas F5 específicas**
-7. `agesic-dl-poc-ec2` - EC2 Spot instances para F5 bridge
-8. `agesic-dl-poc-visualization` - Grafana OSS 12.1.0 
+1. `axxxxx-dl-poc-network` - VPC, Security Groups y VPC Endpoints
+2. `axxxxx-dl-poc-storage` - Buckets S3
+3. `axxxxx-dl-poc-streaming` - Kinesis streams
+4. `axxxxx-dl-poc-compute` - **ETL Multiformato**, Lambda y Glue jobs
+5. `axxxxx-dl-poc-analytics` - Athena workgroup y **7 queries F5**
+6. `axxxxx-dl-poc-monitoring` - CloudWatch y **8 alarmas F5 específicas**
+7. `axxxxx-dl-poc-ec2` - EC2 Spot instances para F5 bridge
+8. `axxxxx-dl-poc-visualization` - Grafana OSS 12.1.0 
 
 ## Configuración Post-Despliegue
 
@@ -214,13 +214,13 @@ Los stacks tienen dependencias y se despliegan en el siguiente orden:
 
 ```bash
 # Listar instancias EC2
-aws ec2 describe-instances --filters "Name=tag:Name,Values=agesic-dl-poc-f5-bridge" --query "Reservations[].Instances[?State.Name=='running'].InstanceId" --output text --profile agesicUruguay-699019841929
+aws ec2 describe-instances --filters "Name=tag:Name,Values=axxxxx-dl-poc-f5-bridge" --query "Reservations[].Instances[?State.Name=='running'].InstanceId" --output text --profile axxxxxx-69xxxxxxxxx9
 
 # Conectar via SSM Session Manager
-aws ssm start-session --target i-1234567890abcdef0 --profile agesicUruguay-699019841929
+aws ssm start-session --target i-1234567890abcdef0 --profile axxxxxx-69xxxxxxxxx9
 
 # Una vez conectado, ir al directorio de trabajo
-cd /opt/agesic-datalake
+cd /opt/axxxxx-datalake
 
 # Ver estado del sistema
 ./status.sh
@@ -236,42 +236,42 @@ python3 f5_log_processor.py --stats
 
 ```bash
 # Ejecutar job ETL multiformato
-aws glue start-job-run --job-name agesic-dl-poc-f5-etl-multiformat --profile agesicUruguay-699019841929
+aws glue start-job-run --job-name axxxxx-dl-poc-f5-etl-multiformat --profile axxxxxx-69xxxxxxxxx9
 
 # Monitorear progreso
-aws glue get-job-run --job-name agesic-dl-poc-f5-etl-multiformat --run-id jr_xxx --profile agesicUruguay-699019841929
+aws glue get-job-run --job-name axxxxx-dl-poc-f5-etl-multiformat --run-id jr_xxx --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ### 3. Verificar Datos Procesados
 
 ```bash
 # Verificar archivos Parquet generados
-aws s3 ls s3://agesic-dl-poc-processed-zone/f5-logs/ --recursive --profile agesicUruguay-699019841929
+aws s3 ls s3://axxxxx-dl-poc-processed-zone/f5-logs/ --recursive --profile axxxxxx-69xxxxxxxxx9
 
 # Verificar tabla creada
-aws glue get-table --database-name agesic_dl_poc_database --name f5_logs --profile agesicUruguay-699019841929
+aws glue get-table --database-name axxxxx_dl_poc_database --name f5_logs --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ### 4. Ejecutar Queries F5 Predefinidas
 
 ```bash
 # Listar queries disponibles
-aws athena list-named-queries --profile agesicUruguay-699019841929
+aws athena list-named-queries --profile axxxxxx-69xxxxxxxxx9
 
 # Ejecutar query de análisis de errores F5
 aws athena start-query-execution \
-  --query-string "SELECT * FROM agesic_dl_poc_database.f5_logs WHERE is_error = true LIMIT 10" \
-  --work-group agesic-dl-poc-f5-analytics-wg-xxx \
-  --profile agesicUruguay-699019841929
+  --query-string "SELECT * FROM axxxxx_dl_poc_database.f5_logs WHERE is_error = true LIMIT 10" \
+  --work-group axxxxx-dl-poc-f5-analytics-wg-xxx \
+  --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ### 5. Monitorear Dashboard F5
 
 ```bash
 # Obtener URL del dashboard
-aws cloudwatch describe-dashboards --dashboard-names agesic-dl-poc-f5-analytics-dashboard --profile agesicUruguay-699019841929
+aws cloudwatch describe-dashboards --dashboard-names axxxxx-dl-poc-f5-analytics-dashboard --profile axxxxxx-69xxxxxxxxx9
 
-# URL directa: https://us-east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#dashboards:name=agesic-dl-poc-f5-analytics-dashboard
+# URL directa: https://us-east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#dashboards:name=axxxxx-dl-poc-f5-analytics-dashboard
 ```
 
 ## Queries de Athena Predefinidas (7 queries)
@@ -362,17 +362,17 @@ ITEM:  **Logs**: `*.log`, archivos temporales
 
 ```bash
 # Eliminar todos los stacks
-cdk destroy --all --profile agesicUruguay-699019841929
+cdk destroy --all --profile axxxxxx-69xxxxxxxxx9
 
 # Eliminar stack específico
-cdk destroy agesic-dl-poc-compute --profile agesicUruguay-699019841929
+cdk destroy axxxxx-dl-poc-compute --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ## Troubleshooting
 
 ### Errores Comunes
 
-1. **ETL Multiformato falla**: Verificar logs en `/aws-glue/jobs/agesic-dl-poc-f5-etl-multiformat`
+1. **ETL Multiformato falla**: Verificar logs en `/aws-glue/jobs/axxxxx-dl-poc-f5-etl-multiformat`
 2. **Datos no procesados**: Verificar formato de entrada y regex F5
 3. **Queries Athena fallan**: Verificar particiones y esquema de 33 campos
 4. **Alarmas F5 activadas**: Revisar dashboard y métricas específicas
@@ -381,13 +381,13 @@ cdk destroy agesic-dl-poc-compute --profile agesicUruguay-699019841929
 
 ```bash
 # Logs de ETL Multiformato
-aws logs describe-log-groups --log-group-name-prefix "/aws-glue/jobs/agesic-dl-poc-f5-etl-multiformat" --profile agesicUruguay-699019841929
+aws logs describe-log-groups --log-group-name-prefix "/aws-glue/jobs/axxxxx-dl-poc-f5-etl-multiformat" --profile axxxxxx-69xxxxxxxxx9
 
 # Logs de Lambda F5
-aws logs describe-log-groups --log-group-name-prefix "/aws/lambda/agesic-dl-poc" --profile agesicUruguay-699019841929
+aws logs describe-log-groups --log-group-name-prefix "/aws/lambda/axxxxx-dl-poc" --profile axxxxxx-69xxxxxxxxx9
 
 # Métricas F5 personalizadas
-aws cloudwatch list-metrics --namespace "agesic-dl-poc/F5Analytics" --profile agesicUruguay-699019841929
+aws cloudwatch list-metrics --namespace "axxxxx-dl-poc/F5Analytics" --profile axxxxxx-69xxxxxxxxx9
 ```
 
 ## Soporte
